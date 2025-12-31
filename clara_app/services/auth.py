@@ -19,8 +19,9 @@ def sign_up(email, password):
     legacy_uid = helpers.email_to_user_id(email)
     
     try:
-        # Create user (let Firebase generate a random secure UID)
+        # Create user with specific UID to match legacy hash
         user = auth.create_user(
+            uid=legacy_uid,
             email=email,
             password=password
         )

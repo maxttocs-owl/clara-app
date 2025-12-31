@@ -3,5 +3,5 @@ google-generativeai==0.8.5
 firebase-admin==7.1.0
 pandas==2.3.3
 tzdata; platform_system=="Windows"
-pinecone-client==5.0.1
+pinecone==5.0.1
 pysqlite3-binary; platform_system!="Windows"

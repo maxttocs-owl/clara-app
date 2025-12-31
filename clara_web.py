@@ -11,13 +11,20 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import random
 
-from clara_app.constants import FREE_DAILY_MESSAGE_LIMIT, PLUS_DAILY_MESSAGE_LIMIT, BETA_ACCESS_KEY
-from clara_app.services import storage, llm, memory
+from clara_app.constants import FREE_DAILY_MESSAGE_LIMIT, PLUS_DAILY_MESSAGE_LIMIT, BETA_ACCESS_KEY, FIREBASE_WEB_API_KEY
+from clara_app.services import storage, llm, memory, auth
 from clara_app.utils import helpers
 from clara_app.ui import styles, components
 
+from PIL import Image
+
 # --- 1. SETUP & CONFIGURATION ---
-st.set_page_config(page_title="Clara Aster", layout="centered")
+try:
+    favicon = Image.open("assets/clara_favicon.png")
+except Exception:
+    favicon = None
+
+st.set_page_config(page_title="Clara Aster", page_icon=favicon, layout="centered")
 
 # Initialize Firebase (The Memory & Security)
 storage.initialize_firebase()
@@ -70,41 +77,125 @@ if "page" in st.query_params:
 
 # --- 2. THE WEB INTERFACE ---
 
-# --- VIEW A: IDENTIFICATION SCREEN ---
+# --- VIEW A: AUTHENTICATION SCREEN ---
 if st.session_state.username is None:
     st.title("Clara")
-    st.write("")  # Visual breathing room
+    
+    if FIREBASE_WEB_API_KEY:
+        tab1, tab2 = st.tabs(["Log In", "New Account"])
 
-    with st.form("clara_id_form"):
-        name_input = st.text_input("Name", label_visibility="collapsed", placeholder="Enter your First and Last Name")
-        submit_id = st.form_submit_button("Start Chat", type="primary")
+        # --- LOG IN ---
+        with tab1:
+            with st.form("clara_login_form"):
+                email_in = st.text_input("Email", placeholder="you@example.com")
+                pass_in = st.text_input("Password", type="password", placeholder="••••••")
+                submit_login = st.form_submit_button("Log In", type="primary")
+            
+            if submit_login:
+                if not email_in or not pass_in:
+                    st.error("Please enter both email and password.")
+                else:
+                    uid, user_email, err = auth.sign_in(email_in, pass_in)
+                    if err:
+                        st.error(err)
+                    else:
+                        # Success! Set up session
+                        st.session_state.user_email = user_email
+                        st.session_state.user_id = uid  # usage doc id
+                        
+                        # Core identity setup
+                        storage.ensure_user_identity(uid, user_email)
+                        
+                        # Migration check (if they had a legacy email-doc-id that wasn't migrated yet)
+                        # Note: The auth.sign_up logic forces UID to match legacy hash, so this should usually just work.
+                        # But we double check ensuring the chat doc exists.
+                        chat_id = uid
+                        if not storage.chat_doc_exists(uid):
+                             # Check for legacy hash ID
+                             legacy_hash = helpers.email_to_user_id(user_email)
+                             if storage.chat_doc_exists(legacy_hash):
+                                 # We found their old data under the hash!
+                                 # Since we are logging in with a UID that MIGHT match the hash (thanks to my auth.py fix),
+                                 # this check is just a safeguard.
+                                 if uid != legacy_hash:
+                                     # This happens if they have a random UID from before the fix.
+                                     # We should migrate or just use the hash as the chat_id.
+                                     chat_id = legacy_hash
+                        
+                        st.session_state.username = chat_id
+                        st.session_state.display_name = None # Will auto-fetch on rerun
+                        st.rerun()
 
-    if submit_id and name_input:
-        clean_name = name_input.strip()
-        if clean_name:
-            stable_id = helpers.name_to_id(clean_name)
-            first_name = clean_name.split()[0]
-            
-            # Set Session State
-            st.session_state.user_id = stable_id
-            st.session_state.username = stable_id
-            st.session_state.display_name = clean_name
-            
-            # Initialize Identity (creates doc if new)
-            storage.ensure_user_identity(stable_id, f"{stable_id}@placeholder.com")
-            storage.save_user_name(stable_id, clean_name)
+            # Simple password reset 
+            with st.expander("Forgot password?"):
+                with st.form("reset_form"):
+                    reset_email = st.text_input("Account Email")
+                    reset_submit = st.form_submit_button("Send Reset Link")
+                if reset_submit and reset_email:
+                    ok, msg = auth.send_password_reset(reset_email)
+                    if ok:
+                        st.success(msg)
+                    else:
+                        st.error(msg)
 
-            # Load past history immediately if it exists
-            history = storage.get_chat_history(stable_id)
-            if history:
-                st.session_state.messages = history
-            else:
-                # Generate the first greeting if this is a new conversation
-                st.session_state.messages = []
-                greeting = f"Nice to meet you, {first_name}. I’m here as a partner in thought for whatever is on your mind today."
-                st.session_state.messages.append({"role": "assistant", "content": greeting})
-                storage.append_chat_message(stable_id, "assistant", greeting)
+        # --- SIGN UP ---
+        with tab2:
+            st.caption("Create a secure account to talk to Clara.")
+            with st.form("clara_signup_form"):
+                new_email = st.text_input("Email")
+                new_pass = st.text_input("Password", type="password", help="At least 6 characters")
+                confirm_pass = st.text_input("Confirm Password", type="password")
+                submit_signup = st.form_submit_button("Create Account")
             
+            if submit_signup:
+                if not new_email or not new_pass:
+                    st.error("Please fill in all fields.")
+                elif new_pass != confirm_pass:
+                    st.error("Passwords do not match.")
+                elif len(new_pass) < 6:
+                    st.error("Password should be at least 6 characters.")
+                else:
+                    # Create the user server-side
+                    uid, err = auth.sign_up(new_email, new_pass)
+                    if err:
+                        st.error(err)
+                    else:
+                        st.success("Account created successfully! Logging you in...")
+                        # Auto-login
+                        uid, user_email, err = auth.sign_in(new_email, new_pass)
+                        if not err:
+                            st.session_state.user_email = user_email
+                            st.session_state.user_id = uid
+                            storage.ensure_user_identity(uid, user_email)
+                            st.session_state.username = uid
+                            st.session_state.display_name = None
+                            st.rerun()
+                        else:
+                            st.info("Account created. Please switch to the Log In tab to sign in.")
+    
+    else:
+        # --- FALLBACK: SIMPLE EMAIL LOGIN (DEV/LEGACY MODE) ---
+        st.caption("Dev Mode active (missing `FIREBASE_WEB_API_KEY`). Using simple email login.")
+        with st.form("clara_login_form"):
+            username_input = st.text_input("Email", placeholder="Enter your email", label_visibility="collapsed")
+            login_submitted = st.form_submit_button("Continue", type="primary")
+
+        if login_submitted and username_input:
+            email = helpers.normalize_email(username_input)
+            user_id = helpers.email_to_user_id(email)
+
+            st.session_state.user_email = email
+            st.session_state.user_id = user_id or None
+
+            # For fallback mode, we default to the legacy/simple email ID unless a migrated ID exists
+            chat_id = user_id or email
+            
+            # Simple identity tracking
+            if user_id:
+                storage.ensure_user_identity(user_id, email)
+
+            st.session_state.username = chat_id
+            st.session_state.display_name = None
             st.rerun()
 
     components.render_footer()
