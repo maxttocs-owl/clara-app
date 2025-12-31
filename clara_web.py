@@ -19,7 +19,7 @@ from clara_app.ui import styles, components
 from PIL import Image
 
 # --- 1. SETUP & CONFIGURATION ---
-st.set_page_config(page_title="Clara Aster", page_icon="Clara Avatars/Simple Avatar/clara_favicon.png", layout="centered")
+st.set_page_config(page_title="Clara Aster", page_icon="Clara Avatars/Simple Avatar/clara_favicon_v2.jpeg", layout="centered")
 
 # Initialize Firebase (The Memory & Security)
 storage.initialize_firebase()
