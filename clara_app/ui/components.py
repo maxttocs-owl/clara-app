@@ -176,16 +176,16 @@ def render_sidebar():
             if st.button("Edit Profile", use_container_width=True):
                 edit_profile_dialog()
             
-            if st.button("Clear Chat", type="secondary"):
+            if st.button("Clear Chat", type="secondary", use_container_width=True):
                 st.session_state.messages = []
                 storage.clear_chat_history(st.session_state.username)
                 st.rerun()
 
-            if st.button("Change name", type="secondary"):
+            if st.button("Change name", type="secondary", use_container_width=True):
                 st.session_state.display_name = ""
                 st.rerun()
 
-            if st.button("Sign out", type="secondary"):
+            if st.button("Sign out", type="secondary", use_container_width=True):
                 st.session_state.username = None
                 st.session_state.user_id = None
                 st.session_state.user_email = None
@@ -205,9 +205,8 @@ def render_sidebar():
 
         # 3. Privacy & Terms
         with st.expander("Privacy & Terms"):
-            st.markdown(
                 """
-                **Safety & Control**
+                **For Your Safety**
 
                 **Nature of Presence**  
                 Clara is an AI Persona and a Digital Presence—a witness to patterns and a partner in thought. She is not a professional service (doctor, therapist, or lawyer).
