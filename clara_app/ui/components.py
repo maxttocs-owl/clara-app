@@ -12,7 +12,7 @@ def render_chat_message(role, content):
     else:
         label = st.session_state.get("display_name") or "You"
         label_class = "user-label"
-        avatar = "Clara Avatars/Simple Avatar/user_avatar_helmet_v3.jpeg"
+        avatar = "Clara Avatars/Simple Avatar/user_avatar_helmet_v4.jpeg"
 
     if RETRO_UI:
         safe_text = html.escape(content).replace("\n", "<br/>")
