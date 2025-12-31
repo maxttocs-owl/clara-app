@@ -77,15 +77,6 @@ if st.session_state.username is None:
     st.title("Clara")
     
     if FIREBASE_WEB_API_KEY:
-        # --- DEBUG: SYSTEM STATUS ---
-        is_init, app_name = storage.is_initialized()
-        if is_init:
-            st.caption(f"✅ System Online (Auth: Connected)")
-        else:
-            st.error("❌ System Failure: Firebase Not Initialized")
-            # Force Re-init attempt?
-            storage.initialize_firebase()
-        
         tab1, tab2 = st.tabs(["Log In", "New Account"])
 
         # --- LOG IN ---
