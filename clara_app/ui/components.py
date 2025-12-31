@@ -8,7 +8,7 @@ def render_chat_message(role, content):
     if role == "assistant":
         label = "Clara"
         label_class = "clara-label"
-        avatar = "Clara Avatars/Simple Avatar/clara_avatar_simple.png"
+        avatar = "Clara Avatars/Simple Avatar/clara_avatar_helmet.jpeg"
     else:
         label = st.session_state.get("display_name") or "You"
         label_class = "user-label"

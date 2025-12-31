@@ -1,25 +1,57 @@
 import streamlit as st
 import os
-import chromadb
-from chromadb.config import Settings
+from pinecone import Pinecone, ServerlessSpec
 import google.generativeai as genai
 from typing import List, Dict, Any, Optional
 import datetime
 import uuid
+import time
 
-from clara_app.constants import API_KEY
+from clara_app.constants import API_KEY, PINECONE_API_KEY
 
 # Configuration
-DB_PATH = os.environ.get("CLARA_MEMORY_DB_PATH", "./clara_memory_db")
-COLLECTION_NAME = "clara_thoughts"
+INDEX_NAME = "clara-memory"
+
+_pinecone = None
+_index = None
 
 @st.cache_resource
 def _get_client():
-    return chromadb.PersistentClient(path=DB_PATH)
+    if not PINECONE_API_KEY:
+        return None
+    return Pinecone(api_key=PINECONE_API_KEY)
 
-def _get_collection():
-    client = _get_client()
-    return client.get_or_create_collection(name=COLLECTION_NAME)
+def _get_index():
+    global _index
+    if _index is not None:
+        return _index
+
+    pc = _get_client()
+    if not pc:
+        return None
+        
+    # Check if index exists, create if not
+    existing_indexes = pc.list_indexes().names()
+    if INDEX_NAME not in existing_indexes:
+        try:
+            pc.create_index(
+                name=INDEX_NAME,
+                dimension=768, # Gemini embedding-001 dimension
+                metric="cosine",
+                spec=ServerlessSpec(
+                    cloud="aws",
+                    region="us-east-1"
+                )
+            )
+            # Wait for availability
+            while not pc.describe_index(INDEX_NAME).status['ready']:
+                time.sleep(1)
+        except Exception as e:
+            print(f"Index creation error: {e}")
+            return None
+
+    _index = pc.Index(INDEX_NAME)
+    return _index
 
 def get_embedding(text: str) -> Optional[List[float]]:
     """
@@ -43,7 +75,7 @@ def get_embedding(text: str) -> Optional[List[float]]:
 
 def store_memory(username: str, text: str, metadata: Dict[str, Any]):
     """
-    Store a text memory with associated metadata.
+    Store a text memory with associated metadata in Pinecone.
     """
     if not text or not username:
         return
@@ -52,10 +84,12 @@ def store_memory(username: str, text: str, metadata: Dict[str, Any]):
     if not embedding:
         return
 
-    collection = _get_collection()
+    index = _get_index()
+    if not index:
+        return
     
     # Ensure standard metadata fields
-    # Chroma only supports str, int, float, bool in metadata
+    # Pinecone metadata values can be strings, numbers, booleans, or lists of strings
     safe_metadata = {}
     for k, v in metadata.items():
         if isinstance(v, (str, int, float, bool)):
@@ -65,15 +99,22 @@ def store_memory(username: str, text: str, metadata: Dict[str, Any]):
             
     safe_metadata["username"] = username
     safe_metadata["timestamp"] = datetime.datetime.now().isoformat()
+    safe_metadata["text"] = text # Store text in metadata for retrieval
     
     memory_id = str(uuid.uuid4())
     
-    collection.add(
-        documents=[text],
-        embeddings=[embedding],
-        metadatas=[safe_metadata],
-        ids=[memory_id]
-    )
+    try:
+        index.upsert(
+            vectors=[
+                {
+                    "id": memory_id,
+                    "values": embedding,
+                    "metadata": safe_metadata
+                }
+            ]
+        )
+    except Exception as e:
+        print(f"Pinecone Store Error: {e}")
 
 def search_memories(username: str, query_text: str, n_results: int = 5, min_relevance: float = 0.0) -> List[Dict[str, Any]]:
     """
@@ -92,53 +133,90 @@ def search_memories(username: str, query_text: str, n_results: int = 5, min_rele
     except Exception:
         return []
 
-    collection = _get_collection()
+    index = _get_index()
+    if not index:
+        return []
     
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=n_results,
-        where={"username": username} # Filter by user
-    )
-    
-    # Format results
-    memories = []
-    if results["ids"]:
-        for i in range(len(results["ids"][0])):
+    try:
+        results = index.query(
+            vector=query_embedding,
+            top_k=n_results,
+            include_metadata=True,
+            filter={"username": {"$eq": username}}
+        )
+        
+        # Format results
+        memories = []
+        for match in results.matches:
+            if match.score < min_relevance:
+                continue
+                
             memories.append({
-                "id": results["ids"][0][i],
-                "content": results["documents"][0][i],
-                "metadata": results["metadatas"][0][i],
-                "distance": results["distances"][0][i] if "distances" in results else 0
+                "id": match.id,
+                "content": match.metadata.get("text", ""),
+                "metadata": match.metadata,
+                "distance": 1 - match.score # Convert similarity to distance if needed (0=close) or just keep consistency
             })
-            
-    return memories
+                
+        return memories
+    except Exception as e:
+        print(f"Pinecone Search Error: {e}")
+        return []
 
 def search_patterns(username: str, tone: str, n_results: int = 5) -> List[Dict[str, Any]]:
     """
     Specific search to find memories with a matching emotional tone.
     Used for the 'Integrity Mirror' functionality.
     """
-    collection = _get_collection()
+    index = _get_index()
+    if not index:
+        return []
+
+    # Pinecone doesn't allow query without vector, so we use a "dummy" vector 
+    # OR we really should be doing vector search + filter.
+    # Ideally, we want "semantically relevant things that ALSO match the tone"
+    # But the Integrity Mirror concept is "What other times did I feel THIS way?"
+    # So actually, we want to find *recent* or *random* memories with this tone?
     
-    # We want to find memories with the same tone, regardless of semantic content?
-    # Actually, we probably want "Recent memories with this tone" or just "any memories with this tone".
-    # Querying without embeddings (just metadata filter) is possible in Chroma.
+    # For now, let's just query for the MOST RECENT items with this tone.
+    # Since Pinecone is vector-first, pure metadata filtering is a bit tricky without a vector.
+    # We will use a zero vector or a generic "emotion" vector.
+    # Better yet: We just search for the *current situation* vector, but strongly filter by tone.
+    # This means: "Find me memories about THIS topic where I ALSO felt THIS way."
     
-    results = collection.get(
-        where={"$and": [
-            {"username": {"$eq": username}},
-            {"tone": {"$eq": tone}}
-        ]},
-        limit=n_results
-    )
+    # But if we want *pure* pattern matching (e.g. Anxiety about X matches Anxiety about Y),
+    # the vector similarity of X and Y might be low.
     
-    memories = []
-    if results["ids"]:
-        for i in range(len(results["ids"])):
+    # Workaround: Use a generic query like "My feelings" to get memories, filtered by tone.
+    try:
+         query_embedding = genai.embed_content(
+            model="models/embedding-001",
+            content=f"My feelings of {tone}",
+            task_type="retrieval_query"
+        )['embedding']
+    except:
+        return []
+        
+    try:
+        results = index.query(
+            vector=query_embedding,
+            top_k=n_results,
+            include_metadata=True,
+            filter={
+                "username": {"$eq": username},
+                "tone": {"$eq": tone}
+            }
+        )
+        
+        memories = []
+        for match in results.matches:
             memories.append({
-                "id": results["ids"][i],
-                "content": results["documents"][i],
-                "metadata": results["metadatas"][i]
+                "id": match.id,
+                "content": match.metadata.get("text", ""),
+                "metadata": match.metadata
             })
             
-    return memories
+        return memories
+    except Exception as e:
+        print(f"Pinecone Pattern Error: {e}")
+        return []

@@ -5,9 +5,10 @@ import datetime
 from clara_app.constants import FREE_DAILY_MESSAGE_LIMIT, PLUS_DAILY_MESSAGE_LIMIT, FORCE_PLAN, FIREBASE_SERVICE_ACCOUNT, FIREBASE_CREDENTIALS_PATH
 from clara_app.utils.helpers import normalize_email
 
-@st.cache_resource
+# @st.cache_resource # Removed to prevent stale client issues after long uptime
 def get_db():
     if not firebase_admin._apps:
+
         try:
             if FIREBASE_SERVICE_ACCOUNT:
                 cred = credentials.Certificate(dict(FIREBASE_SERVICE_ACCOUNT))
@@ -312,8 +313,9 @@ def get_chat_history(username, limit: int = 60):
                 if role in ("user", "assistant") and isinstance(content, str):
                     items.append({"role": role, "content": content})
             return items
-    except Exception:
+    except Exception as e:
         # If query fails, fall back to legacy field
+        print(f"Error fetching chat history (Query): {e}")
         pass
 
     # Legacy fallback: read `messages` array from the chat doc (older versions)
