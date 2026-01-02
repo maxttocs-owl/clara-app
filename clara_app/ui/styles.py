@@ -1,11 +1,16 @@
 import streamlit as st
 
-APP_STYLES = """
+def apply_styles():
+    # 1. External Fonts
+    st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
+""", unsafe_allow_html=True)
 
+    # 2. Main Stylesheet
+    st.markdown("""
+<style>
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 
@@ -163,7 +168,4 @@ h1, h2, h3, .brand-title {
     color: #cbd5e1;
 }
 </style>
-"""
-
-def apply_styles():
-    st.markdown(APP_STYLES, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
