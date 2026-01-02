@@ -461,44 +461,43 @@ else:
 
             # B. Get Clara's Response (with Clarity/Integrity Mirror)
             try:
-                # 1. Emotional Analysis & Memory Retrieval
-                memory_context = ""
-                try:
-                    # Async-like extraction (conceptually)
-                    emotion_data = llm.extract_emotional_metadata(prompt)
-                    
-                    # Store current thought in vector DB (we do it before response so it's searchable in future immediate turns if needed, 
-                    # but typically we'd do it after. Here we do it after response to correspond to the 'memory' of the interaction)
-                    # Actually, for the Integrity Mirror, we want to know if *this* feeling matches *past* feelings.
-                    
-                    # a) Semantic Search (General context)
-                    related_memories = memory.search_memories(st.session_state.username, prompt, n_results=3)
-                    
-                    # b) Pattern Search (Integrity Mirror)
-                    pattern_memories = []
-                    if emotion_data["weight"] >= 7:
-                        pattern_memories = memory.search_patterns(st.session_state.username, emotion_data["tone"], n_results=3)
-                    
-                    # Combine & Deduplicate
-                    all_memories = {}
-                    for m in related_memories + pattern_memories:
-                        all_memories[m["id"]] = m
-                    
-                    if all_memories:
-                        memory_context = "\n[INTEGRITY MIRROR - RELEVANT MEMORIES]\n"
-                        for m in all_memories.values():
-                            memory_context += f"- ({m['metadata']['timestamp'][:10]}) {m['content']} [Tone: {m['metadata'].get('tone')}]\n"
-                except Exception as e:
-                    print(f"Memory error: {e}") 
+                with st.status("Clara is reflecting...", expanded=False) as status:
+                    # 1. Emotional Analysis & Memory Retrieval
+                    memory_context = ""
+                    try:
+                        # Async-like extraction (conceptually)
+                        emotion_data = llm.extract_emotional_metadata(prompt)
+                        
+                        # a) Semantic Search (General context)
+                        related_memories = memory.search_memories(st.session_state.username, prompt, n_results=3)
+                        
+                        # b) Pattern Search (Integrity Mirror)
+                        pattern_memories = []
+                        if emotion_data["weight"] >= 7:
+                            pattern_memories = memory.search_patterns(st.session_state.username, emotion_data["tone"], n_results=3)
+                        
+                        # Combine & Deduplicate
+                        all_memories = {}
+                        for m in related_memories + pattern_memories:
+                            all_memories[m["id"]] = m
+                        
+                        if all_memories:
+                            memory_context = "\n[INTEGRITY MIRROR - RELEVANT MEMORIES]\n"
+                            for m in all_memories.values():
+                                memory_context += f"- ({m['metadata']['timestamp'][:10]}) {m['content']} [Tone: {m['metadata'].get('tone')}]\n"
+                    except Exception as e:
+                        print(f"Memory error: {e}") 
 
-                # 2. Add Context to Prompt (Hidden from user UI)
-                final_prompt = prompt
-                if memory_context:
-                    # We prepend semantic context so Clara knows it immediately
-                    final_prompt = f"{memory_context}\n\nUser: {prompt}"
+                    # 2. Add Context to Prompt (Hidden from user UI)
+                    final_prompt = prompt
+                    if memory_context:
+                        # We prepend semantic context so Clara knows it immediately
+                        final_prompt = f"{memory_context}\n\nUser: {prompt}"
 
-                response = chat_session.send_message(final_prompt)
-                clara_text = response.text or ""
+                    response = chat_session.send_message(final_prompt)
+                    clara_text = response.text or ""
+                    
+                    status.update(label="Clara has gathered her thoughts", state="complete", expanded=False)
                 
                 # 3. Store this interaction in long-term memory
                 try:
