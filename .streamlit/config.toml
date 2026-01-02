@@ -1,15 +1,17 @@
 [theme]
-# Primary background for the entire app. Dark, but not pure black.
-backgroundColor = "#121212"
+# Modern Minimalist Theme (Zinc & Indigo)
 
-# Secondary background for chat bubbles, sidebar, and containers.
-secondaryBackgroundColor = "#1E1E1E"
+# Primary background: Deep Zinc/Charcoal (Not pure black)
+backgroundColor = "#18181b" 
 
-# Vibrant electric teal for primary actions and accents.
-primaryColor = "#03DAC6"
+# Secondary background: Lighter Zinc for sidebar and input fields
+secondaryBackgroundColor = "#27272a"
 
-# Soft gray/off-white for highly readable body text.
-textColor = "#E0E0E0"
+# Primary Color: Neutral Slate Blue
+primaryColor = "#475569"
 
-# Keep the existing monospace aesthetic unless you want to change it.
-font = "monospace"
+# Text Color: Off-white / Zinc 100
+textColor = "#f4f4f5"
+
+# Font: Clean Sans-Serif
+font = "sans serif"

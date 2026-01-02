@@ -8,17 +8,17 @@ def render_chat_message(role, content):
     if role == "assistant":
         label = "Clara"
         label_class = "clara-label"
-        avatar = "Clara Avatars/Simple Avatar/clara_avatar_aster.jpeg"
+        avatar = "Clara Avatars/Simple Avatar/clara_avatar_blue_v2.jpeg"
     else:
         label = st.session_state.get("display_name") or "You"
         label_class = "user-label"
-        avatar = "Clara Avatars/Simple Avatar/user_avatar_helmet_v4.jpeg"
+        avatar = "Clara Avatars/Simple Avatar/user_avatar_helmet_v5.jpeg"
 
     if RETRO_UI:
         safe_text = html.escape(content).replace("\n", "<br/>")
         line_class = "clara" if role == "assistant" else "user"
         st.markdown(
-            f"<div class=\"chat-line {line_class}\"><span class=\"name {label_class}\">{html.escape(label)}:</span><span class=\"msg\">{safe_text}</span></div>",
+            f"<div class=\"chat-line {line_class}\"><span class=\"name {label_class}\">{html.escape(label)}</span><span class=\"msg\">{safe_text}</span></div>",
             unsafe_allow_html=True,
         )
         return
@@ -136,6 +136,10 @@ def render_privacy_policy_page():
 def edit_profile_dialog():
     st.write("Update your details below to help Clara understand you better.")
     
+    # 0. Name
+    current_name = st.session_state.get("display_name") or storage.get_user_name(st.session_state.username) or ""
+    new_name = st.text_input("Your Name", value=current_name, placeholder="What should I call you?")
+
     # 1. Profile Note
     current_note = storage.get_user_profile_note(st.session_state.username)
     new_note = st.text_area(
@@ -155,6 +159,10 @@ def edit_profile_dialog():
     )
     
     if st.button("Save Changes", type="primary"):
+        if new_name.strip() and new_name != current_name:
+            storage.save_user_name(st.session_state.username, new_name.strip())
+            st.session_state.display_name = new_name.strip()
+
         if new_note != current_note:
             storage.save_user_profile_note(st.session_state.username, new_note)
         
@@ -177,10 +185,6 @@ def render_sidebar():
             if st.button("Clear Chat", type="secondary", use_container_width=True):
                 st.session_state.messages = []
                 storage.clear_chat_history(st.session_state.username)
-                st.rerun()
-
-            if st.button("Change name", type="secondary", use_container_width=True):
-                st.session_state.display_name = ""
                 st.rerun()
 
             if st.button("Sign out", type="secondary", use_container_width=True):

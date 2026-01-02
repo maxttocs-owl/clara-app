@@ -12,7 +12,7 @@ from clara_app.ui import styles, components
 from PIL import Image
 
 # --- 1. SETUP & CONFIGURATION ---
-st.set_page_config(page_title="Clara Aster", page_icon="Clara Avatars/Simple Avatar/clara_favicon_v2.jpeg", layout="centered")
+st.set_page_config(page_title="Clara Aster", page_icon="Clara Avatars/Simple Avatar/clara_avatar_blue_v2.jpeg", layout="centered")
 
 # Initialize Firebase (The Memory & Security)
 storage.initialize_firebase()
@@ -36,6 +36,18 @@ if "access_code" not in st.session_state:
 if "show_login_anyway" not in st.session_state:
     st.session_state.show_login_anyway = False
 
+@st.dialog("Enter Access Key")
+def enter_key_dialog():
+    key_in = st.text_input("Access Key", type="password", label_visibility="collapsed")
+    if st.button("Enter", use_container_width=True):
+        status = storage.validate_access_code(key_in)
+        if status["valid"]:
+            st.session_state.beta_authenticated = True
+            st.session_state.access_code = key_in
+            st.rerun()
+        else:
+            st.error("Invalid Entry Key.")
+
 # Bypass gate if:
 # 1. Already "Beta Authenticated" (entered a valid key this session)
 # 2. Already logged in (Existing user)
@@ -46,25 +58,37 @@ if not st.session_state.beta_authenticated and st.session_state.username is None
         st.session_state.beta_authenticated = True
         st.rerun()
 
-    st.title("Clara Aster™")
-    with st.form("beta_gate_form"):
-        key_input = st.text_input("Enter Early Access Key", type="password")
-        submit_key = st.form_submit_button("Enter")
-    
-    if submit_key:
-        status = storage.validate_access_code(key_input)
-        if status["valid"]:
-            st.session_state.beta_authenticated = True
-            st.session_state.access_code = key_input
-            st.rerun()
-        else:
-            st.error("Invalid Entry Key.")
-    
-    # Allow existing master/staff to reach login screen
-    if st.button("Log In (Existing Users)"):
-        st.session_state.show_login_anyway = True
-        st.rerun()
+    # --- SIDEBAR (Access & Log In) ---
+    with st.sidebar:
+        st.title("Clara")
         
+        # Access Key Trigger
+        if st.button("Early Access", use_container_width=True):
+            enter_key_dialog()
+
+        # Returning Users
+        if st.button("Log In", use_container_width=True):
+            st.session_state.show_login_anyway = True
+            st.rerun()
+
+    # --- MAIN VIEW (Minimalist Landing) ---
+    # Center everything using columns
+    left_co, cent_co, last_co = st.columns([0.15, 0.7, 0.15])
+    
+    with cent_co:
+        st.write("")
+        st.write("") 
+        st.write("")
+        st.write("")
+        st.write("")
+        st.title("Clara")
+        st.markdown("## The Journal That Writes Back")
+        st.markdown("*She holds a lamp to your own intuition.*")
+        
+        st.write("")
+        st.write("")
+        st.link_button("Request Beta Access", "https://tally.so/r/3xjo7G", type="primary", use_container_width=True)
+    
     st.stop()
 
 # --- 1.5. PAGE ROUTING (Legal Content) ---
@@ -155,6 +179,7 @@ if st.session_state.username is None:
             st.caption("Create a secure account to talk to Clara.")
             with st.form("clara_signup_form"):
                 new_email = st.text_input("Email")
+                new_name = st.text_input("Your Name", placeholder="What should I call you?")
                 new_pass = st.text_input("Password", type="password", help="At least 6 characters")
                 confirm_pass = st.text_input("Confirm Password", type="password")
                 submit_signup = st.form_submit_button("Create Account")
@@ -169,7 +194,7 @@ if st.session_state.username is None:
                      st.error("Access session expired? Please refresh and re-enter your key.")
                 elif not is_master and not is_dev_key and status["used"]:
                      st.error("This Access Key has already been used to create an account. If that was you, please Log In instead.")
-                elif not new_email or not new_pass:
+                elif not new_email or not new_pass or not new_name:
                     st.error("Please fill in all fields.")
                 elif new_pass != confirm_pass:
                     st.error("Passwords do not match.")
@@ -193,8 +218,10 @@ if st.session_state.username is None:
                                 storage.claim_access_code(st.session_state.access_code, uid)
                                 
                             storage.ensure_user_identity(uid, user_email)
+                            storage.save_user_name(uid, new_name) # Save the name!
+                            
                             st.session_state.username = uid
-                            st.session_state.display_name = None
+                            st.session_state.display_name = new_name
                             st.rerun()
                         else:
                             st.info("Account created. Please switch to the Log In tab to sign in.")
@@ -237,6 +264,24 @@ if st.session_state.username is None:
 
 # --- VIEW C: THE CHAT INTERFACE ---
 else:
+    # 0. Hydrate Display Name
+    if st.session_state.display_name is None:
+        st.session_state.display_name = storage.get_user_name(st.session_state.username)
+    
+    # If still missing (legacy or error), we must ask
+    if not st.session_state.display_name:
+        st.info("Hi there, nice to meet you. What should I call you?")
+        with st.form("name_setup"):
+            chosen_name = st.text_input("Your Name", placeholder="e.g. Alex")
+            if st.form_submit_button("Save Name"):
+                if chosen_name.strip():
+                    storage.save_user_name(st.session_state.username, chosen_name.strip())
+                    st.session_state.display_name = chosen_name.strip()
+                    st.rerun()
+                else:
+                    st.error("Please enter a name.")
+        st.stop()
+
     # 1. Simple header
     st.title("Clara")
 

@@ -83,7 +83,7 @@ Return ONLY the label name. Do not explain.
 """
 
 # Config
-RETRO_UI = False
+RETRO_UI = True
 FREE_DAILY_MESSAGE_LIMIT = 50
 PLUS_DAILY_MESSAGE_LIMIT = None
 

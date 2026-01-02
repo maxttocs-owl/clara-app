@@ -2,135 +2,181 @@ import streamlit as st
 
 APP_STYLES = """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Open+Sans:wght@300;400;500;600;700&display=swap');
+
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 
-/* Chat typography & spacing, mobile-friendly but safe for desktop */
+/* --- TYPOGRAPHY & LAYOUT --- */
+body, .stMarkdown, .stButton, .stTextInput, .stChatInput {
+    font-family: 'Open Sans', sans-serif;
+}
+
+/* Titles and Headings - Montserrat for a clean, versatile feel */
+h1, h2, h3, .brand-title {
+    font-family: 'Montserrat', sans-serif !important;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+/* Chat typography - optimized for readability */
+.chat-line {
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
 @media (max-width: 600px) {
     .chat-line {
-        font-size: 0.98rem;
-        line-height: 1.5;
+        font-size: 0.9rem;
     }
 }
 
-.chat-line {
-    margin: 0.35rem 0;
-}
-
+/* --- CHAT BUBBLES --- */
 .chat-line .name {
     display: block;
     font-weight: 600;
-    font-size: 0.82rem;
-    margin-bottom: 0.15rem;
-    opacity: 0.95;
+    font-size: 0.72rem;
+    margin-bottom: 0.3rem;
+    opacity: 0.9;
+    margin-left: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-family: 'Montserrat', sans-serif;
 }
 
 .chat-line .msg {
     display: inline-block;
-    padding: 0.55rem 0.8rem;
-    border-radius: 0.9rem;
-    max-width: 100%;
+    padding: 1rem 1.25rem;
+    border-radius: 1.1rem;
+    max-width: 85%;
     word-wrap: break-word;
-    color: #E5E7EB; /* soft off-white for message text */
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Subtle border for glassmorphism */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* CLARA'S BUBBLE: Glass Teal */
+.chat-line.clara .msg {
+    background: rgba(15, 118, 110, 0.15); /* Semi-transparent Teal */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #ccfbf1; /* Teal 100 */
+    border-bottom-left-radius: 0.3rem;
+    font-family: 'Lato', sans-serif;
+    font-weight: 400;
+    font-size: 1.05rem; 
+    line-height: 1.7;
 }
 
 .clara-label {
-    color: #60A5FA; /* muted blue for Clara's name */
+    color: #5eead4; /* Teal 300 */
+}
+
+/* USER'S BUBBLE: Glass Blue */
+.chat-line.user .msg {
+    background: rgba(30, 64, 175, 0.15); /* Semi-transparent Blue */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #dbeafe; /* Blue 100 */
+    border-bottom-right-radius: 0.3rem;
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 400;
 }
 
 .user-label {
-    color: #2DD4BF; /* soft teal for user name */
+    color: #93c5fd; /* Blue 300 */
 }
 
-.chat-line.clara .msg {
-    background: rgba(148, 163, 184, 0.12);
+/* --- SIDEBAR & UI --- */
+[data-testid="stSidebar"] {
+    border-right: 1px solid #1e293b; /* Slate border */
 }
 
-.chat-line.user .msg {
-    background: rgba(56, 189, 248, 0.18);
+[data-testid="stSidebar"] * {
+    font-size: 0.85rem;
+    color: #cbd5e1; /* Slate 300 */
 }
 
-/* Safe chat labels (used in non-retro mode) */
-.chat-name {
-    display: block;
-    font-weight: 600;
-    font-size: 0.82rem;
-    margin: 0 0 0.15rem 0;
-    opacity: 0.95;
+[data-testid="stSidebar"] .st-expander {
+    border: none;
+    background: transparent;
 }
 
-/* Data & Privacy sidebar text: slightly smaller and softer */
+/* Data & Privacy sidebar text */
 .privacy-text {
-    font-size: 0.8rem;
-    line-height: 1.4;
-    color: #9CA3AF; /* muted gray */
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: #94a3b8;
 }
 
 .privacy-text h2,
 .privacy-text h3,
 .privacy-text strong {
-    color: #D1D5DB; /* lighter gray for headings/emphasis */
+    color: #e2e8f0;
+    font-weight: 600;
 }
 
-/* Sidebar overall: slightly smaller, tighter spacing, no heavy borders */
-[data-testid="stSidebar"] * {
-    font-size: 0.9rem;
+/* --- BUTTONS --- */
+/* Standardize buttons for a premium feel */
+.stButton button, .stLinkButton a {
+    border-radius: 0.5rem !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    font-weight: 500 !important;
 }
 
-[data-testid="stSidebar"] .st-expander {
-    border: none;
-    padding-top: 0.1rem;
-    padding-bottom: 0.1rem;
+/* Secondary Button Hover (Neutral) */
+.stButton button[kind="secondary"]:hover {
+    border-color: #64748b !important; /* Slate 500 */
+    color: #f8fafc !important; /* Slate 50 */
+    background: #334155 !important; /* Slate 700 */
 }
 
-[data-testid="stSidebar"] .st-expanderHeader {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
+/* Primary Button refinement */
+.stButton button[kind="primary"], .stLinkButton a[data-testid="stLinkButton"] {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
 }
 
-[data-testid="stSidebar"] .st-expanderContent {
-    padding-top: 0.25rem;
-    padding-bottom: 0.4rem;
-}
-
-/* Force sidebar buttons to be left-aligned */
-[data-testid="stSidebar"] .stButton button {
-    width: 100%;
-    text-align: left;
-    display: flex;
-    justify-content: flex-start;
-    padding-left: 1rem;
-}
-
-
-/* RED BUTTON OVERRIDES – Danger Zone delete buttons */
+/* Danger Zone delete buttons */
 .danger-delete button {
-    background-color: #FF4B4B !important;
-    border-color: #FF4B4B !important;
-    color: white !important;
+    background-color: transparent !important;
+    border: 1px solid #b91c1c !important;
+    color: #f87171 !important;
+    transition: all 0.2s ease;
 }
 
 .danger-delete button:hover {
-    background-color: #D93434 !important;
-    border-color: #D93434 !important;
+    background-color: #7f1d1d !important;
+    border-color: #ef4444 !important;
     color: white !important;
 }
 
 /* Footer / Disclaimer text */
 .footer-text {
-    font-size: 0.75rem;
-    color: #9CA3AF; /* muted gray */
+    font-size: 0.7rem;
+    color: #64748b; /* Slate 500 */ 
     text-align: center;
-    margin-top: 2rem;
+    margin-top: 3rem;
     padding-bottom: 1rem;
-    opacity: 0.8;
 }
 
 .footer-text a {
-    color: #9CA3AF;
-    text-decoration: underline;
+    color: #94a3b8;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-text a:hover {
+    color: #cbd5e1;
 }
 </style>
+
+
 """
 
 def apply_styles():
