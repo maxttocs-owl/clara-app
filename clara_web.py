@@ -1,10 +1,3 @@
-try:
-    __import__('pysqlite3')
-    import sys
-    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-except ImportError:
-    pass
-
 import streamlit as st
 import datetime
 from zoneinfo import ZoneInfo
@@ -430,6 +423,7 @@ else:
                         st.session_state.username, 
                         prompt, 
                         {
+                            "role": "user",
                             "tone": emotion_data["tone"], 
                             "weight": emotion_data["weight"],
                             "topic": topic if 'topic' in locals() else "General"
@@ -453,7 +447,20 @@ else:
                 components.render_chat_message("assistant", clara_text)
                 st.session_state.messages.append({"role": "assistant", "content": clara_text})
                 
-                # D. SAVE TO DATABASE (Long-term Memory)
+                # Store Clara's response in memory too
+                try:
+                    memory.store_memory(
+                        st.session_state.username,
+                        clara_text,
+                        {
+                            "role": "assistant",
+                            "topic": topic if 'topic' in locals() else "General"
+                        }
+                    )
+                except Exception:
+                    pass
+
+                # D. SAVE TO DATABASE (Firestore Chat Message)
                 storage.append_chat_message(st.session_state.username, "assistant", clara_text)
 
                 # E. Occasionally refresh the long-term summary so Clara remembers enduring context
@@ -491,7 +498,7 @@ else:
                 if "429" in error_message or "quota" in error_message.lower():
                     st.warning(
                         "Clara’s thinking is hitting the limits of the current plan for a moment.\n\n"
-                        "Give it a little time and try again. If this keeps happening, check your Gemini API usage and billing."
+                        "Give it a little time and try again. If this keeps happening, it might be a temporary connection issue."
                     )
                 else:
                     st.error(f"Clara hit an unexpected error: {type(e).__name__}: {error_message}")

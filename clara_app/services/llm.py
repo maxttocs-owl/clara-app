@@ -9,9 +9,30 @@ from clara_app.constants import API_KEY, SYSTEM_INSTRUCTIONS, SUMMARY_SYSTEM_INS
 if API_KEY:
     genai.configure(api_key=API_KEY)
 
+# Safety Settings
+SAFETY_SETTINGS = [
+    {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_ONLY_HIGH",
+    },
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+]
+
 _model = None
 _summary_model = None
 _classifier_model = None
+_meta_model = None
 
 def get_model():
     global _model
@@ -19,6 +40,7 @@ def get_model():
         _model = genai.GenerativeModel(
             model_name="gemini-2.5-pro",
             system_instruction=SYSTEM_INSTRUCTIONS,
+            safety_settings=SAFETY_SETTINGS
         )
     return _model
 
@@ -26,8 +48,9 @@ def get_summary_model():
     global _summary_model
     if _summary_model is None:
         _summary_model = genai.GenerativeModel(
-            model_name="gemini-2.5-pro",
+            model_name="gemini-2.5-flash", 
             system_instruction=SUMMARY_SYSTEM_INSTRUCTIONS,
+            safety_settings=SAFETY_SETTINGS
         )
     return _summary_model
 
@@ -35,10 +58,20 @@ def get_classifier_model():
     global _classifier_model
     if _classifier_model is None:
         _classifier_model = genai.GenerativeModel(
-            model_name="gemini-2.5-pro",
+            model_name="gemini-2.5-flash",
             system_instruction=CLASSIFIER_SYSTEM_INSTRUCTIONS,
+            safety_settings=SAFETY_SETTINGS
         )
     return _classifier_model
+
+def get_meta_model():
+    global _meta_model
+    if _meta_model is None:
+        _meta_model = genai.GenerativeModel(
+            model_name="gemini-2.5-flash",
+            safety_settings=SAFETY_SETTINGS
+        )
+    return _meta_model
 
 def classify_topic(user_text: str) -> str:
     """
@@ -89,7 +122,7 @@ def extract_emotional_metadata(text: str) -> Dict[str, Any]:
         return {"tone": "Neutral", "weight": 1}
 
     try:
-        model = get_model() # Reuse the main model or a faster one
+        model = get_meta_model()
         
         prompt = f"""
         Analyze the following text for its emotional tone and emotional weight (intensity).

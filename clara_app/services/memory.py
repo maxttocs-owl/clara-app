@@ -99,7 +99,10 @@ def store_memory(username: str, text: str, metadata: Dict[str, Any]):
             
     safe_metadata["username"] = username
     safe_metadata["timestamp"] = datetime.datetime.now().isoformat()
-    safe_metadata["text"] = text # Store text in metadata for retrieval
+    safe_metadata["text"] = text 
+    # Role is helpful for grounding
+    if "role" not in safe_metadata:
+         safe_metadata["role"] = metadata.get("role", "user")
     
     memory_id = str(uuid.uuid4())
     

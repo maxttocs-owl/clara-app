@@ -66,7 +66,7 @@ def render_terms_page():
         **4. Disclaimer of Warranties**
         The Service is provided on an "AS IS" and "AS AVAILABLE" basis. Clara Aster makes no warranties, expressed or implied, regarding the accuracy, reliability, or completeness of the content provided by the Service. 
         
-        **AI Disclaimer:** The Service utilizes artificial intelligence to generate responses. As an AI Persona, these responses may occasionally be inaccurate. You should not rely on this Digital Presence for professional (medical, legal, financial) advice.
+        **AI Disclaimer:** The Service utilizes Generative AI and Large Language Model (LLM) technology to generate responses. As an AI Persona, these responses may occasionally be inaccurate. You should not rely on this Digital Presence for professional (medical, legal, financial) advice.
 
         **5. Limitation of Liability**
         In no event shall Clara Aster, its developers, or suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the Service, even if Clara Aster has been notified orally or in writing of the possibility of such damage.
@@ -82,7 +82,7 @@ def render_terms_page():
     render_footer()
 
 def render_privacy_policy_page():
-    """Renders the consolidated privacy policy page (Gemini-style)."""
+    """Renders the consolidated privacy policy page."""
     st.title("Privacy Policy")
     st.markdown(
         """
@@ -99,7 +99,7 @@ def render_privacy_policy_page():
         ### 2. How We Use Information
         *   **To Provide the Service:** We process your input to generate responses and maintain your conversational history.
         *   **Safety & Security:** We process content to detect and prevent harmful or illegal activity in line with our safety guidelines.
-        *   **AI Processing:** Content is processed by Google's Gemini API to generate responses. By using this service, you acknowledge that data handling is subject to Google's API data usage policies.
+        *   **AI Processing:** Content is processed by secure, high-integrity Large Language Model (LLM) and Generative AI processors to generate responses. By using this service, you acknowledge that your inputs are processed to facilitate the Digital Presence's thinking and memory.
 
         ---
 
@@ -113,7 +113,7 @@ def render_privacy_policy_page():
         ### 4. Keeping You Safe
         *   **Age Requirement:** This service is intended for users **18+**.
         *   **Nature of Presence:** Clara is an AI Persona, not a human. She is not a replacement for professional medical, legal, or financial advice.
-        *   **Crisis Resources:** If you are in crisis, please call **911** or **988** (US) immediately.
+        *   **Crisis Resources:** If you are in crisis, call **911** or **988** (US) immediately, or contact your local emergency services outside the United States.
 
         ---
 
@@ -212,7 +212,7 @@ def render_sidebar():
 
                 **In a Crisis**
                 <div style="color: #FF4B4B; font-weight: bold;">
-                If you are in crisis, call 911 or call/text 988 immediately (US).
+                If you are in crisis, call 911 or call/text 988 immediately (US), or contact your local emergency services.
                 </div>
                 """,
                 unsafe_allow_html=True,
