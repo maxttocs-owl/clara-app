@@ -9,19 +9,16 @@ APP_STYLES = """
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 
-/* --- TYPOGRAPHY & LAYOUT --- */
 body, .stMarkdown, .stButton, .stTextInput, .stChatInput {
     font-family: 'Open Sans', sans-serif;
 }
 
-/* Titles and Headings - Montserrat for a clean, versatile feel */
 h1, h2, h3, .brand-title {
     font-family: 'Montserrat', sans-serif !important;
     font-weight: 600;
     letter-spacing: -0.02em;
 }
 
-/* Chat typography - optimized for readability */
 .chat-line {
     margin: 1.5rem 0;
     font-size: 0.95rem;
@@ -34,7 +31,6 @@ h1, h2, h3, .brand-title {
     }
 }
 
-/* --- CHAT BUBBLES --- */
 .chat-line .name {
     display: block;
     font-weight: 600;
@@ -53,7 +49,7 @@ h1, h2, h3, .brand-title {
     border-radius: 1.1rem;
     max-width: 85%;
     word-wrap: break-word;
-    border: 1px solid rgba(255, 255, 255, 0.08); /* Subtle border for glassmorphism */
+    border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     animation: fadeIn 0.4s ease-out;
 }
@@ -63,12 +59,11 @@ h1, h2, h3, .brand-title {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* CLARA'S BUBBLE: Glass Teal */
 .chat-line.clara .msg {
-    background: rgba(15, 118, 110, 0.15); /* Semi-transparent Teal */
+    background: rgba(15, 118, 110, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    color: #ccfbf1; /* Teal 100 */
+    color: #ccfbf1;
     border-bottom-left-radius: 0.3rem;
     font-family: 'Lato', sans-serif;
     font-weight: 400;
@@ -77,32 +72,30 @@ h1, h2, h3, .brand-title {
 }
 
 .clara-label {
-    color: #5eead4; /* Teal 300 */
+    color: #5eead4;
 }
 
-/* USER'S BUBBLE: Glass Blue */
 .chat-line.user .msg {
-    background: rgba(30, 64, 175, 0.15); /* Semi-transparent Blue */
+    background: rgba(30, 64, 175, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    color: #dbeafe; /* Blue 100 */
+    color: #dbeafe;
     border-bottom-right-radius: 0.3rem;
     font-family: 'Open Sans', sans-serif;
     font-weight: 400;
 }
 
 .user-label {
-    color: #93c5fd; /* Blue 300 */
+    color: #93c5fd;
 }
 
-/* --- SIDEBAR & UI --- */
 [data-testid="stSidebar"] {
-    border-right: 1px solid #1e293b; /* Slate border */
+    border-right: 1px solid #1e293b;
 }
 
 [data-testid="stSidebar"] * {
     font-size: 0.85rem;
-    color: #cbd5e1; /* Slate 300 */
+    color: #cbd5e1;
 }
 
 [data-testid="stSidebar"] .st-expander {
@@ -110,7 +103,6 @@ h1, h2, h3, .brand-title {
     background: transparent;
 }
 
-/* Data & Privacy sidebar text */
 .privacy-text {
     font-size: 0.75rem;
     line-height: 1.5;
@@ -124,27 +116,22 @@ h1, h2, h3, .brand-title {
     font-weight: 600;
 }
 
-/* --- BUTTONS --- */
-/* Standardize buttons for a premium feel */
 .stButton button, .stLinkButton a {
     border-radius: 0.5rem !important;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     font-weight: 500 !important;
 }
 
-/* Secondary Button Hover (Neutral) */
 .stButton button[kind="secondary"]:hover {
-    border-color: #64748b !important; /* Slate 500 */
-    color: #f8fafc !important; /* Slate 50 */
-    background: #334155 !important; /* Slate 700 */
+    border-color: #64748b !important;
+    color: #f8fafc !important;
+    background: #334155 !important;
 }
 
-/* Primary Button refinement */
 .stButton button[kind="primary"], .stLinkButton a[data-testid="stLinkButton"] {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Danger Zone delete buttons */
 .danger-delete button {
     background-color: transparent !important;
     border: 1px solid #b91c1c !important;
@@ -158,10 +145,9 @@ h1, h2, h3, .brand-title {
     color: white !important;
 }
 
-/* Footer / Disclaimer text */
 .footer-text {
     font-size: 0.7rem;
-    color: #64748b; /* Slate 500 */ 
+    color: #64748b;
     text-align: center;
     margin-top: 3rem;
     padding-bottom: 1rem;
@@ -177,8 +163,6 @@ h1, h2, h3, .brand-title {
     color: #cbd5e1;
 }
 </style>
-
-
 """
 
 def apply_styles():
