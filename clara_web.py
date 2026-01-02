@@ -82,7 +82,7 @@ if not st.session_state.beta_authenticated and st.session_state.username is None
         st.write("")
         st.write("")
         st.title("Clara")
-        st.markdown("## The Journal That Writes Back")
+        st.markdown("## A journal that responds to your thoughts")
         st.markdown("*She holds a lamp to your own intuition.*")
         
         st.write("")
